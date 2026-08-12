@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { installService, stopService } from "../src/service.js";
 import { resolvePaths } from "../src/paths.js";
@@ -16,6 +17,9 @@ test("systemd setup enables and restarts the service", async (t) => {
   };
 
   await installService(paths, { platform: "linux", runCommand });
+
+  const unit = await readFile(paths.systemdUnit, "utf8");
+  assert.doesNotMatch(unit, /^WorkingDirectory=/m);
 
   assert.deepEqual(calls, [
     ["systemctl", "--user", "daemon-reload"],

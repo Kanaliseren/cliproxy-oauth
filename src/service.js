@@ -15,7 +15,6 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=${systemdValue(paths.dataDir)}
 ExecStart=${systemdValue(paths.currentBinary)} -config ${systemdValue(paths.proxyConfig)}
 Restart=on-failure
 RestartSec=2
