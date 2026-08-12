@@ -1,0 +1,46 @@
+name: upstream-watch
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compare tested and current releases
+        id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-upstreams.mjs >> "$GITHUB_OUTPUT"
+      - name: Open compatibility issue
+        if: steps.compare.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Compatibility promotion required: ${process.env.SUMMARY}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "compatibility",
+            });
+            if (existing.data.some(issue => issue.title === title)) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ["compatibility"],
+              body: "An upstream release differs from the bundled tested matrix. Rebase patches, run unit/race/build gates, capture Claude protocol capabilities, and complete an isolated real-OAuth canary before updating `channel/stable.json`. Do not auto-promote.",
+            });
+        env:
+          SUMMARY: ${{ steps.compare.outputs.summary }}

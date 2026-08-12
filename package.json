@@ -1,0 +1,48 @@
+{
+  "name": "cliproxy-oauth",
+  "version": "0.1.0",
+  "description": "Safe, portable OAuth lifecycle manager for CLIProxyAPI, Claude Code, Paseo, and T3 Code",
+  "type": "module",
+  "bin": {
+    "cliproxy-oauth": "bin/cliproxy-oauth.js"
+  },
+  "files": [
+    "bin",
+    "channel",
+    "scripts",
+    "src",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/cliproxy-oauth.js && node --test && npm pack --dry-run",
+    "check:upstreams": "node scripts/check-upstreams.mjs",
+    "verify:assets": "node scripts/verify-stable-assets.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kanaliseren/cliproxy-oauth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kanaliseren/cliproxy-oauth/issues"
+  },
+  "homepage": "https://github.com/Kanaliseren/cliproxy-oauth#readme",
+  "keywords": [
+    "claude-code",
+    "cliproxyapi",
+    "codex",
+    "oauth",
+    "paseo",
+    "t3-code"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,0 +1,42 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { readProxyKey, readProxySummary, writeProxyConfig } from "../src/config.js";
+import { resolvePaths } from "../src/paths.js";
+import { writeClaudeWrapper } from "../src/wrapper.js";
+import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
+
+const manifest = fixtureManifest();
+
+test("setup config is loopback-only and preserves its generated key", async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  const first = await writeProxyConfig(paths, manifest, { port: 18417 });
+  const second = await writeProxyConfig(paths, manifest, { port: 18418 });
+  const summary = await readProxySummary(paths.proxyConfig);
+
+  assert.equal(first.proxyKey, second.proxyKey);
+  assert.equal(await readProxyKey(paths.proxyConfig), first.proxyKey);
+  assert.deepEqual(summary, {
+    host: "127.0.0.1",
+    port: 18418,
+    authDir: paths.authDir,
+    remoteManagementDisabled: true,
+    tlsDisabled: true,
+  });
+});
+
+test("Claude wrapper feature-detects flags and only enables ToolSearch for tested versions", async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  await writeProxyConfig(paths, manifest, { port: 19223 });
+  await writeClaudeWrapper(paths, manifest, { platform: "linux" });
+  const wrapper = await readFile(paths.wrapper, "utf8");
+
+  assert.match(wrapper, /ANTHROPIC_BASE_URL='http:\/\/127\.0\.0\.1:19223'/);
+  assert.match(wrapper, /--exclude-dynamic-system-prompt-sections/);
+  assert.match(wrapper, /--append-system-prompt/);
+  assert.match(wrapper, /\*2\.1\.226\*/);
+  assert.match(wrapper, /unset ENABLE_TOOL_SEARCH/);
+  assert.doesNotMatch(wrapper, /local-[a-f0-9]{64}/);
+});

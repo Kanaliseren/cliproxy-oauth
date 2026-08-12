@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "channel": "stable",
+  "proxy": {
+    "version": "v7.2.130-cacheopt.1",
+    "commit": "6edea655bf817ac02685d1a2cfd9be9938c7a020",
+    "repository": "Kanaliseren/CLIProxyAPI",
+    "tag": "v7.2.130-cacheopt.1",
+    "assets": {
+      "linux-x64": {
+        "url": "https://github.com/Kanaliseren/CLIProxyAPI/releases/download/v7.2.130-cacheopt.1/cli-proxy-api-linux-x64.gz",
+        "sha256": "0e2845685147a49912c2a4525d54a6b28a5cf4fcae2e2da036fb80a995f7a340",
+        "compression": "gzip",
+        "archiveSha256": "5872dd6fceaa74414a0ea0b1fc24695095e0726dc10882ee5a037b13f20c93bf",
+        "archiveBytes": 20624573
+      },
+      "linux-arm64": {
+        "url": "https://github.com/Kanaliseren/CLIProxyAPI/releases/download/v7.2.130-cacheopt.1/cli-proxy-api-linux-arm64.gz",
+        "sha256": "c92dde75bcb2c98f8ba80cc24a7d02e42096d78a2395a8a1e11e1ccf90cc1e82",
+        "compression": "gzip",
+        "archiveSha256": "4b14e59fe74bbdc88e2772dc53b33914b520449f5ca49341d75eb53371882671",
+        "archiveBytes": 18662031
+      },
+      "darwin-x64": {
+        "url": "https://github.com/Kanaliseren/CLIProxyAPI/releases/download/v7.2.130-cacheopt.1/cli-proxy-api-darwin-x64.gz",
+        "sha256": "abeff61694d4aaad7daa4cff71c30028c09352609922583149b1689e3e74db24",
+        "compression": "gzip",
+        "archiveSha256": "85456084e87fd3e2d3d947d294af3f71b16fcc3144fbe4120f2b7c15b9f4e102",
+        "archiveBytes": 21885272
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/Kanaliseren/CLIProxyAPI/releases/download/v7.2.130-cacheopt.1/cli-proxy-api-darwin-arm64.gz",
+        "sha256": "5956c19a1eff47c5ed1fc36460b452023627d7a1fa24c6632d33a2d86aefed25",
+        "compression": "gzip",
+        "archiveSha256": "53264e912d2992e4ce4867e8219b06191cbb01fdb0910abafea6a0d7ce29ccdc",
+        "archiveBytes": 19523908
+      },
+      "win32-x64": {
+        "url": "https://github.com/Kanaliseren/CLIProxyAPI/releases/download/v7.2.130-cacheopt.1/cli-proxy-api-win32-x64.exe.gz",
+        "sha256": "dfcc475cf518b4552683d3c8a0827bea058bc04d3cea5c3bf43f711e9f81b348",
+        "compression": "gzip",
+        "archiveSha256": "85d45b6b616bc66bb97173e7cd0ec57d8562dda01078dfc830d601f608822075",
+        "archiveBytes": 21049351
+      }
+    }
+  },
+  "models": {
+    "sol": {
+      "upstream": "gpt-5.6-sol",
+      "alias": "claude-sonnet-5",
+      "displayName": "Sonnet 5 (GPT-5.6 Sol)"
+    },
+    "terra": {
+      "upstream": "gpt-5.6-terra",
+      "alias": "claude-haiku-4-5",
+      "displayName": "Haiku 4.5 (GPT-5.6 Terra)"
+    }
+  },
+  "compatibility": {
+    "claudeCode": {
+      "tested": ["2.1.226", "2.1.228"],
+      "requiredCapabilities": ["--append-system-prompt"],
+      "optionalCapabilities": ["--exclude-dynamic-system-prompt-sections"]
+    },
+    "cliProxyAPI": {
+      "requiredCapabilities": ["-codex-login", "-codex-device-login", "-config"]
+    },
+    "paseo": {
+      "testedConfigSchema": 1
+    },
+    "t3Code": {
+      "tested": ["0.0.34-nightly.20260812.1072"],
+      "testedConfigSchema": 1
+    }
+  }
+}
