@@ -27,7 +27,8 @@ WantedBy=default.target
 `;
   await atomicWrite(paths.systemdUnit, unit, 0o600);
   await runCommand("systemctl", ["--user", "daemon-reload"]);
-  await runCommand("systemctl", ["--user", "enable", "--now", "cliproxy-oauth.service"]);
+  await runCommand("systemctl", ["--user", "enable", "cliproxy-oauth.service"]);
+  await runCommand("systemctl", ["--user", "restart", "cliproxy-oauth.service"]);
   return { kind: "systemd", installed: true, path: paths.systemdUnit };
 }
 
@@ -62,6 +63,20 @@ export async function restartService(paths, { platform = process.platform, runCo
   }
   if (platform === "darwin" && (await exists(paths.launchdPlist))) {
     await runCommand("launchctl", ["kickstart", "-k", `gui/${process.getuid()}/com.kanaliseren.cliproxy-oauth`]);
+    return true;
+  }
+  return false;
+}
+
+export async function stopService(paths, { platform = process.platform, runCommand = run } = {}) {
+  if (platform === "linux" && (await exists(paths.systemdUnit))) {
+    await runCommand("systemctl", ["--user", "stop", "cliproxy-oauth.service"], { allowFailure: true });
+    return true;
+  }
+  if (platform === "darwin" && (await exists(paths.launchdPlist))) {
+    await runCommand("launchctl", ["bootout", `gui/${process.getuid()}`, paths.launchdPlist], {
+      allowFailure: true,
+    });
     return true;
   }
   return false;

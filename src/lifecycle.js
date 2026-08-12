@@ -2,7 +2,7 @@ import { ensureDir, exists, run, withFileLock } from "./util.js";
 import { activateRelease, stageRelease } from "./binary.js";
 import { runIsolatedCanary } from "./canary.js";
 import { readProxyKey, readProxySummary, writeProxyConfig } from "./config.js";
-import { installService, restartService } from "./service.js";
+import { installService, restartService, stopService } from "./service.js";
 import { loadState, saveState } from "./state.js";
 import { writeClaudeWrapper } from "./wrapper.js";
 
@@ -26,6 +26,8 @@ export async function setup(paths, manifest, options = {}) {
           await activateRelease(paths, oldState.activeRelease).catch(() => {});
           await saveState(paths, oldState).catch(() => {});
           await restartService(paths, options).catch(() => {});
+        } else {
+          await stopService(paths, options).catch(() => {});
         }
         throw error;
       }
