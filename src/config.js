@@ -68,12 +68,19 @@ export async function readProxyKey(path) {
 export async function readProxySummary(path) {
   const text = await readFile(path, "utf8");
   return {
-    host: scalar(text, "host")?.replaceAll(/["']/g, ""),
+    host: parseYamlScalar(scalar(text, "host")),
     port: Number(scalar(text, "port")),
-    authDir: scalar(text, "auth-dir")?.replace(/^['"]|['"]$/g, ""),
+    authDir: parseYamlScalar(scalar(text, "auth-dir")),
     remoteManagementDisabled: /disable-control-panel:\s*true/.test(text) && /allow-remote:\s*false/.test(text),
     tlsDisabled: /tls:\s*\n(?:\s+.*\n)*?\s+enable:\s*false/m.test(text),
   };
+}
+
+function parseYamlScalar(value) {
+  if (value === undefined) return undefined;
+  if (value.startsWith('"') && value.endsWith('"')) return JSON.parse(value);
+  if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replaceAll("''", "'");
+  return value;
 }
 
 function scalar(text, name) {

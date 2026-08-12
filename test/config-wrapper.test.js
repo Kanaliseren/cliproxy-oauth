@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { readProxyKey, readProxySummary, writeProxyConfig } from "../src/config.js";
+import { readProxyKey, readProxySummary, renderProxyConfig, writeProxyConfig } from "../src/config.js";
 import { resolvePaths } from "../src/paths.js";
+import { atomicWrite } from "../src/util.js";
 import { writeClaudeWrapper } from "../src/wrapper.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
 
@@ -24,6 +25,21 @@ test("setup config is loopback-only and preserves its generated key", async (t) 
     remoteManagementDisabled: true,
     tlsDisabled: true,
   });
+});
+
+test("config summary decodes a quoted Windows auth path", async (t) => {
+  const root = await temporaryRoot(t);
+  const configPath = `${root}/windows.yaml`;
+  const authDir = "C:\\Users\\example\\AppData\\Local\\cliproxy-oauth\\auth";
+  const yaml = renderProxyConfig({
+    paths: { authDir },
+    manifest,
+    port: 18417,
+    proxyKey: "test-key",
+  });
+  await atomicWrite(configPath, yaml);
+
+  assert.equal((await readProxySummary(configPath)).authDir, authDir);
 });
 
 test("Claude wrapper feature-detects flags and only enables ToolSearch for tested versions", async (t) => {

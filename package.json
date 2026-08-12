@@ -1,6 +1,6 @@
 {
   "name": "cliproxy-oauth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Safe, portable OAuth lifecycle manager for CLIProxyAPI, Claude Code, Paseo, and T3 Code",
   "type": "module",
   "bin": {

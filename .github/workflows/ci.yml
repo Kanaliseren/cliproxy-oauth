@@ -32,3 +32,17 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/verify-stable-assets.mjs
+
+  windows-binary-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install and inspect the pinned Windows binary
+        shell: pwsh
+        run: |
+          $env:CLIPROXY_OAUTH_HOME = Join-Path $env:RUNNER_TEMP "cliproxy-oauth-smoke"
+          node bin/cliproxy-oauth.js setup --no-service --port 19431
+          node bin/cliproxy-oauth.js doctor --json

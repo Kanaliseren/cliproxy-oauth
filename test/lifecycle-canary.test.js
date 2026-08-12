@@ -8,7 +8,7 @@ import { resolvePaths } from "../src/paths.js";
 import { loadState } from "../src/state.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
 
-test("setup installs an inspected local binary without a service", async (t) => {
+test("setup installs an inspected local binary without a service", { skip: process.platform === "win32" }, async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
   const binary = join(root, "fake-proxy");
@@ -26,7 +26,7 @@ test("setup installs an inspected local binary without a service", async (t) => 
   assert.match(await readFile(paths.proxyConfig, "utf8"), /^port: 19417$/m);
 });
 
-test("isolated canary uses an access-only OAuth copy and exercises messages", async (t) => {
+test("isolated canary uses an access-only OAuth copy and exercises messages", { skip: process.platform === "win32" }, async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
   await mkdir(paths.authDir, { recursive: true, mode: 0o700 });
@@ -44,7 +44,7 @@ test("isolated canary uses an access-only OAuth copy and exercises messages", as
   assert.equal(result.oauthTested, true);
 });
 
-test("upgrade canaries a distinct build and rollback restores the exact prior binary", async (t) => {
+test("upgrade canaries a distinct build and rollback restores the exact prior binary", { skip: process.platform === "win32" }, async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
   const manifest = fixtureManifest();
