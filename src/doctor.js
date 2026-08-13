@@ -42,7 +42,8 @@ export async function diagnose(paths, manifest, { live = false, fetchImpl = fetc
     try {
       const inspection = await inspectBinary(paths.currentBinary, manifest, { runCommand });
       const matches = !state.activeRelease?.sha256 || state.activeRelease.sha256 === inspection.sha256;
-      add("binary", matches ? "pass" : "fail", `${inspection.sha256.slice(0, 12)} (${manifest.proxy.version})`);
+      const version = state.activeRelease?.version ?? manifest.proxy.version;
+      add("binary", matches ? "pass" : "fail", `${inspection.sha256.slice(0, 12)} (${version})`);
     } catch (error) {
       add("binary", "fail", error.message);
     }
@@ -148,7 +149,7 @@ async function claudeSummary(manifest, runCommand) {
     const missing = manifest.compatibility.claudeCode.requiredCapabilities.filter((flag) => !help.includes(flag));
     if (missing.length > 0) return { status: "fail", detail: `${version}; missing ${missing.join(", ")}` };
     if (!manifest.compatibility.claudeCode.tested.includes(version)) {
-      return { status: "warn", detail: `${version}; untested, native ToolSearch will remain disabled` };
+      return { status: "warn", detail: `${version}; untested, proxy ToolSearch override remains enabled` };
     }
     return { status: "pass", detail: `${version}; compatibility-tested` };
   } catch (error) {

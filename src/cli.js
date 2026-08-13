@@ -2,7 +2,7 @@ import { loadManifest } from "./manifest.js";
 import { resolvePaths } from "./paths.js";
 import { diagnose, statusSummary } from "./doctor.js";
 import { integrate } from "./integrations.js";
-import { login, rollback, setup, upgrade } from "./lifecycle.js";
+import { login, rollback, setup, updateClaudeCode, upgrade } from "./lifecycle.js";
 import { runClaude } from "./wrapper.js";
 
 export async function main(argv = process.argv.slice(2), io = console) {
@@ -66,6 +66,8 @@ export async function main(argv = process.argv.slice(2), io = console) {
 
   if (command === "update" || command === "upgrade") {
     rejectPositionals(parsed, command);
+    const claude = await updateClaudeCode();
+    io.log(`Claude Code is current (${claude.version}).`);
     const result = await upgrade(paths, manifest, { binary: parsed.options.binary });
     if (!result.changed) io.log(`Already on ${result.release.version} (${result.release.sha256.slice(0, 12)}).`);
     else {

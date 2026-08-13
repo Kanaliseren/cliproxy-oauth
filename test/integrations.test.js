@@ -46,6 +46,7 @@ test("T3 integration updates only the Claude environment and protects the token"
         environment: [
           { name: "KEEP_ME", value: "yes", sensitive: false },
           { name: "ANTHROPIC_AUTH_TOKEN", value: "old", sensitive: true, valueRedacted: true },
+          { name: "ANTHROPIC_API_KEY", value: "stale", sensitive: true, valueRedacted: true },
         ],
       },
       futureProvider: { keep: true },
@@ -64,6 +65,14 @@ test("T3 integration updates only the Claude environment and protects the token"
   assert.equal(env.ANTHROPIC_AUTH_TOKEN.value, proxyKey);
   assert.equal(env.ANTHROPIC_AUTH_TOKEN.sensitive, true);
   assert.equal(env.ANTHROPIC_AUTH_TOKEN.valueRedacted, true);
+  assert.equal(env.ANTHROPIC_API_KEY.value, proxyKey);
+  assert.equal(env.ANTHROPIC_API_KEY.sensitive, true);
+  assert.equal(env.ANTHROPIC_API_KEY.valueRedacted, true);
+  assert.equal(env.ANTHROPIC_MODEL.value, manifest.models.sol.alias);
+  assert.equal(env.ANTHROPIC_DEFAULT_SONNET_MODEL.value, manifest.models.sol.alias);
+  assert.equal(env.ANTHROPIC_DEFAULT_HAIKU_MODEL.value, manifest.models.terra.alias);
+  assert.equal(env.ENABLE_TOOL_SEARCH.value, "true");
+  assert.equal(env.API_TIMEOUT_MS.value, "3000000");
   if (process.platform !== "win32") assert.equal((await stat(configPath)).mode & 0o777, 0o600);
 });
 

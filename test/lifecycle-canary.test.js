@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { runIsolatedCanary } from "../src/canary.js";
-import { rollback, setup, upgrade } from "../src/lifecycle.js";
+import { rollback, setup, updateClaudeCode, upgrade } from "../src/lifecycle.js";
 import { resolvePaths } from "../src/paths.js";
 import { loadState } from "../src/state.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
@@ -66,6 +66,37 @@ test("upgrade canaries a distinct build and rollback restores the exact prior bi
   const restored = await rollback(paths);
   assert.equal(await readFile(paths.currentBinary, "utf8"), firstContents);
   assert.equal(restored.sha256, (await loadState(paths)).activeRelease.sha256);
+});
+
+test("upgrade refreshes the Claude wrapper when the proxy binary is unchanged", { skip: process.platform === "win32" }, async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  const binary = join(root, "fake-proxy");
+  await writeExecutable(
+    binary,
+    '#!/bin/sh\nif [ "$1" = "-h" ]; then echo "-codex-login -codex-device-login -config"; fi\n',
+  );
+  await setup(paths, fixtureManifest(), { binary, noService: true });
+  await writeFile(paths.wrapper, "stale wrapper\n", { mode: 0o700 });
+
+  const result = await upgrade(paths, fixtureManifest(), { binary });
+
+  assert.equal(result.changed, false);
+  assert.match(await readFile(paths.wrapper, "utf8"), /export ENABLE_TOOL_SEARCH=true/);
+});
+
+test("update refreshes Claude Code through its native latest channel", async () => {
+  const calls = [];
+  const runCommand = async (binary, args) => {
+    calls.push([binary, ...args]);
+    if (args[0] === "update") return { code: 0, stdout: "updated", stderr: "" };
+    return { code: 0, stdout: "99.1.2 (Claude Code)", stderr: "" };
+  };
+
+  const result = await updateClaudeCode({ runCommand });
+
+  assert.equal(result.version, "99.1.2");
+  assert.deepEqual(calls, [["claude", "update"], ["claude", "--version"]]);
 });
 
 async function writeExecutable(path, contents) {

@@ -64,14 +64,19 @@ npx --yes github:Kanaliseren/claudex update
 
 `upgrade` remains an alias for existing scripts.
 
+`update` and `upgrade` first update Claude Code through its native latest channel,
+then stage the newest compatibility-tested CLIProxyAPI build bundled with Claudex.
+
 This project deliberately does not activate an arbitrary newest upstream build.
 Each package release pins exact binaries and checksums. `upgrade` stages the
 candidate, checks required capabilities, runs an isolated OAuth canary when a
 local credential is available, then atomically activates it. Failed candidates
 leave the current release running.
 
-Claude Code and provider integrations are capability-detected and preserve
-unknown configuration fields. Unsupported future schemas fail without writing.
+Claude Code flags and provider integrations are capability-detected and preserve
+unknown configuration fields. The wrapper keeps native Tool Search enabled for
+future Claude Code releases because the pinned proxy build is the compatibility
+boundary. Unsupported future configuration schemas fail without writing.
 
 ## Security model
 
@@ -85,12 +90,12 @@ unknown configuration fields. Unsupported future schemas fail without writing.
 ## Compatibility
 
 The exact tested matrix is in [`channel/stable.json`](channel/stable.json).
-Scheduled CI detects new CLIProxyAPI releases, but promotion stays gated on the
-test suite, protocol capture, and a real local OAuth canary. Unknown Claude Code
-versions keep the basic proxy workflow but leave optimized native ToolSearch
-disabled until their request/response shape has passed certification. No wrapper can honestly guarantee
-compatibility with every future provider release without this promotion step.
+Scheduled CI detects new CLIProxyAPI releases, but proxy promotion stays gated
+on the test suite, protocol capture, and a real local OAuth canary. New Claude
+Code releases are used immediately and retain the Tool Search override required
+for a custom proxy URL; `doctor` warns when a release has not yet been added to
+the validation matrix.
 
-The current stable channel is based on CLIProxyAPI `v7.2.130` and has been
-tested end-to-end with Claude Code `2.1.226` and `2.1.228`, including direct
-requests, sequential and parallel subagents, and deferred MCP ToolSearch.
+The current stable channel is based on CLIProxyAPI `v7.2.131` and has been
+tested end-to-end with Claude Code `2.1.226`, `2.1.228`, and `2.1.231`, including
+direct requests, native subagents, deferred MCP ToolSearch, and prompt-cache reuse.

@@ -55,10 +55,25 @@ export async function integrateT3(paths, manifest, configPath) {
     throw new Error("unsupported T3 Code config: malformed Claude environment entry");
   }
   const env = await claudeEnvironment(paths, manifest);
-  provider.environment = upsertEnvironment(provider.environment, "ANTHROPIC_BASE_URL", env.ANTHROPIC_BASE_URL, false);
+  for (const name of [
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    "ENABLE_TOOL_SEARCH",
+    "API_TIMEOUT_MS",
+  ]) {
+    provider.environment = upsertEnvironment(provider.environment, name, env[name], false);
+  }
   provider.environment = upsertEnvironment(
     provider.environment,
     "ANTHROPIC_AUTH_TOKEN",
+    env.ANTHROPIC_AUTH_TOKEN,
+    true,
+  );
+  provider.environment = upsertEnvironment(
+    provider.environment,
+    "ANTHROPIC_API_KEY",
     env.ANTHROPIC_AUTH_TOKEN,
     true,
   );

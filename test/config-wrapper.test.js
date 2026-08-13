@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { readProxyKey, readProxySummary, renderProxyConfig, writeProxyConfig } from "../src/config.js";
 import { resolvePaths } from "../src/paths.js";
 import { atomicWrite } from "../src/util.js";
-import { writeClaudeWrapper } from "../src/wrapper.js";
+import { runClaude, writeClaudeWrapper } from "../src/wrapper.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
 
 const manifest = fixtureManifest();
@@ -44,7 +44,7 @@ test("config summary decodes a quoted Windows auth path", async (t) => {
   assert.equal((await readProxySummary(configPath)).authDir, authDir);
 });
 
-test("Claude wrapper feature-detects flags and only enables ToolSearch for tested versions", async (t) => {
+test("Claude wrapper feature-detects flags and keeps ToolSearch enabled for future versions", async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
   await writeProxyConfig(paths, manifest, { port: 19223 });
@@ -54,7 +54,26 @@ test("Claude wrapper feature-detects flags and only enables ToolSearch for teste
   assert.match(wrapper, /ANTHROPIC_BASE_URL='http:\/\/127\.0\.0\.1:19223'/);
   assert.match(wrapper, /--exclude-dynamic-system-prompt-sections/);
   assert.match(wrapper, /--append-system-prompt/);
-  assert.match(wrapper, /\*2\.1\.226\*/);
-  assert.match(wrapper, /unset ENABLE_TOOL_SEARCH/);
+  assert.match(wrapper, /export ENABLE_TOOL_SEARCH=true/);
+  assert.doesNotMatch(wrapper, /unset ENABLE_TOOL_SEARCH/);
   assert.doesNotMatch(wrapper, /local-[a-f0-9]{64}/);
+});
+
+test("Claude command keeps the proxy ToolSearch override on an untested future version", async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  await writeProxyConfig(paths, manifest, { port: 19224 });
+  let invocation;
+  const runCommand = async (_binary, args, options) => {
+    if (args[0] === "--help") {
+      return { code: 0, stdout: "--append-system-prompt --exclude-dynamic-system-prompt-sections", stderr: "" };
+    }
+    if (args[0] === "--version") return { code: 0, stdout: "99.0.0 (Claude Code)", stderr: "" };
+    invocation = { args, options };
+    return { code: 0, stdout: "", stderr: "" };
+  };
+
+  assert.equal(await runClaude(paths, manifest, ["-p", "hello"], { runCommand }), 0);
+  assert.equal(invocation.options.env.ENABLE_TOOL_SEARCH, "true");
+  assert.deepEqual(invocation.args.slice(-2), ["-p", "hello"]);
 });
