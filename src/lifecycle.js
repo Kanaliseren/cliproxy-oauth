@@ -1,4 +1,5 @@
-import { ensureDir, exists, run, withFileLock } from "./util.js";
+import { readFile } from "node:fs/promises";
+import { atomicWrite, ensureDir, exists, run, withFileLock } from "./util.js";
 import { activateRelease, stageRelease } from "./binary.js";
 import { runIsolatedCanary } from "./canary.js";
 import { readProxyKey, readProxySummary, writeProxyConfig } from "./config.js";
@@ -41,25 +42,38 @@ export async function upgrade(paths, manifest, options = {}) {
     await prepareDirectories(paths);
     const oldState = await loadState(paths);
     if (!oldState.activeRelease) throw new Error("run setup before upgrade");
+    const oldConfig = await readFile(paths.proxyConfig, "utf8");
+    const { port } = await readProxySummary(paths.proxyConfig);
     const release = await stageRelease(paths, manifest, options);
     if (release.sha256 === oldState.activeRelease.sha256) {
-      await writeClaudeWrapper(paths, manifest);
-      return { changed: false, release, canary: null };
+      try {
+        await writeProxyConfig(paths, manifest, { port });
+        const configChanged = (await readFile(paths.proxyConfig, "utf8")) !== oldConfig;
+        if (configChanged && (await restartService(paths, options))) await waitForLiveProxy(paths);
+        await writeClaudeWrapper(paths, manifest);
+        return { changed: false, configChanged, release, canary: null };
+      } catch (error) {
+        await atomicWrite(paths.proxyConfig, oldConfig, 0o600).catch(() => {});
+        await restartService(paths, options).catch(() => {});
+        throw error;
+      }
     }
     const canary = await runIsolatedCanary(release.path, paths, manifest, options);
-    await activateRelease(paths, release);
     const nextState = transitionState(oldState, release);
-    await saveState(paths, nextState);
     try {
+      await activateRelease(paths, release);
+      await writeProxyConfig(paths, manifest, { port });
+      await saveState(paths, nextState);
       if (await restartService(paths, options)) await waitForLiveProxy(paths);
+      await writeClaudeWrapper(paths, manifest);
     } catch (error) {
-      await activateRelease(paths, oldState.activeRelease);
-      await saveState(paths, oldState);
+      await activateRelease(paths, oldState.activeRelease).catch(() => {});
+      await atomicWrite(paths.proxyConfig, oldConfig, 0o600).catch(() => {});
+      await saveState(paths, oldState).catch(() => {});
       await restartService(paths, options).catch(() => {});
       throw new Error(`upgrade smoke test failed and was rolled back: ${error.message}`);
     }
-    await writeClaudeWrapper(paths, manifest);
-    return { changed: true, release, canary };
+    return { changed: true, configChanged: true, release, canary };
   });
 }
 

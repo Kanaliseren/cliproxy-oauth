@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { runIsolatedCanary } from "../src/canary.js";
+import { readProxyKey } from "../src/config.js";
 import { rollback, setup, updateClaudeCode, upgrade } from "../src/lifecycle.js";
 import { resolvePaths } from "../src/paths.js";
 import { loadState } from "../src/state.js";
@@ -82,7 +83,40 @@ test("upgrade refreshes the Claude wrapper when the proxy binary is unchanged", 
   const result = await upgrade(paths, fixtureManifest(), { binary });
 
   assert.equal(result.changed, false);
+  assert.equal(result.configChanged, false);
   assert.match(await readFile(paths.wrapper, "utf8"), /export ENABLE_TOOL_SEARCH=true/);
+});
+
+test("upgrade refreshes model aliases without changing the proxy key or port", { skip: process.platform === "win32" }, async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  const binary = join(root, "fake-proxy");
+  await writeExecutable(
+    binary,
+    '#!/bin/sh\nif [ "$1" = "-h" ]; then echo "-codex-login -codex-device-login -config"; fi\n',
+  );
+  const manifest = fixtureManifest();
+  await setup(paths, manifest, { binary, noService: true, port: 19417 });
+  const originalKey = await readProxyKey(paths.proxyConfig);
+  const nextManifest = {
+    ...manifest,
+    models: {
+      ...manifest.models,
+      sol: {
+        ...manifest.models.sol,
+        aliases: [...manifest.models.sol.aliases, "claude-sonnet-future"],
+      },
+    },
+  };
+
+  const result = await upgrade(paths, nextManifest, { binary });
+  const config = await readFile(paths.proxyConfig, "utf8");
+
+  assert.equal(result.changed, false);
+  assert.equal(result.configChanged, true);
+  assert.match(config, /^port: 19417$/m);
+  assert.match(config, /alias: "claude-sonnet-future"/);
+  assert.equal(await readProxyKey(paths.proxyConfig), originalKey);
 });
 
 test("update refreshes Claude Code through its native latest channel", async () => {
