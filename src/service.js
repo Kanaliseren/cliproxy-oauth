@@ -26,8 +26,8 @@ WantedBy=default.target
 `;
   await atomicWrite(paths.systemdUnit, unit, 0o600);
   await runCommand("systemctl", ["--user", "daemon-reload"]);
-  await runCommand("systemctl", ["--user", "enable", "cliproxy-oauth.service"]);
-  await runCommand("systemctl", ["--user", "restart", "cliproxy-oauth.service"]);
+  await runCommand("systemctl", ["--user", "enable", paths.serviceName]);
+  await runCommand("systemctl", ["--user", "restart", paths.serviceName]);
   return { kind: "systemd", installed: true, path: paths.systemdUnit };
 }
 
@@ -36,7 +36,7 @@ async function installLaunchd(paths, runCommand) {
   const plist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.kanaliseren.cliproxy-oauth</string>
+  <key>Label</key><string>${paths.launchdLabel}</string>
   <key>ProgramArguments</key><array>
     <string>${xmlEscape(paths.currentBinary)}</string>
     <string>-config</string><string>${xmlEscape(paths.proxyConfig)}</string>
@@ -57,11 +57,11 @@ async function installLaunchd(paths, runCommand) {
 
 export async function restartService(paths, { platform = process.platform, runCommand = run } = {}) {
   if (platform === "linux" && (await exists(paths.systemdUnit))) {
-    await runCommand("systemctl", ["--user", "restart", "cliproxy-oauth.service"]);
+    await runCommand("systemctl", ["--user", "restart", paths.serviceName]);
     return true;
   }
   if (platform === "darwin" && (await exists(paths.launchdPlist))) {
-    await runCommand("launchctl", ["kickstart", "-k", `gui/${process.getuid()}/com.kanaliseren.cliproxy-oauth`]);
+    await runCommand("launchctl", ["kickstart", "-k", `gui/${process.getuid()}/${paths.launchdLabel}`]);
     return true;
   }
   return false;
@@ -69,7 +69,7 @@ export async function restartService(paths, { platform = process.platform, runCo
 
 export async function stopService(paths, { platform = process.platform, runCommand = run } = {}) {
   if (platform === "linux" && (await exists(paths.systemdUnit))) {
-    await runCommand("systemctl", ["--user", "stop", "cliproxy-oauth.service"], { allowFailure: true });
+    await runCommand("systemctl", ["--user", "stop", paths.serviceName], { allowFailure: true });
     return true;
   }
   if (platform === "darwin" && (await exists(paths.launchdPlist))) {
@@ -83,7 +83,7 @@ export async function stopService(paths, { platform = process.platform, runComma
 
 export async function serviceStatus(paths, { platform = process.platform, runCommand = run } = {}) {
   if (platform === "linux" && (await exists(paths.systemdUnit))) {
-    const result = await runCommand("systemctl", ["--user", "is-active", "cliproxy-oauth.service"], {
+    const result = await runCommand("systemctl", ["--user", "is-active", paths.serviceName], {
       allowFailure: true,
     });
     return { kind: "systemd", installed: true, active: result.stdout.trim() === "active" };
@@ -91,7 +91,7 @@ export async function serviceStatus(paths, { platform = process.platform, runCom
   if (platform === "darwin" && (await exists(paths.launchdPlist))) {
     const result = await runCommand(
       "launchctl",
-      ["print", `gui/${process.getuid()}/com.kanaliseren.cliproxy-oauth`],
+      ["print", `gui/${process.getuid()}/${paths.launchdLabel}`],
       { allowFailure: true },
     );
     return { kind: "launchd", installed: true, active: result.code === 0 };

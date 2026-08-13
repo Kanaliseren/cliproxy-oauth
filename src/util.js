@@ -69,7 +69,7 @@ export async function sha256File(path) {
 export async function download(url, destination) {
   await ensureDir(dirname(destination));
   const response = await fetch(url, {
-    headers: { "User-Agent": "cliproxy-oauth" },
+    headers: { "User-Agent": "claudex" },
     redirect: "follow",
   });
   if (!response.ok || !response.body) {
@@ -151,7 +151,7 @@ export async function withFileLock(path, operation) {
     handle = await open(path, "wx", 0o600);
   } catch (error) {
     if (error?.code === "EEXIST") {
-      throw new Error(`another cliproxy-oauth operation is already running (${path})`);
+      throw new Error(`another Claudex operation is already running (${path})`);
     }
     throw error;
   }

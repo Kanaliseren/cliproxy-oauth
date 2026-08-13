@@ -9,7 +9,7 @@ import { temporaryRoot } from "../test-support/helpers.js";
 test("systemd setup enables and restarts the service", async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
-  paths.systemdUnit = join(root, "systemd", "cliproxy-oauth.service");
+  paths.systemdUnit = join(root, "systemd", "claudex.service");
   const calls = [];
   const runCommand = async (command, args) => {
     calls.push([command, ...args]);
@@ -23,15 +23,15 @@ test("systemd setup enables and restarts the service", async (t) => {
 
   assert.deepEqual(calls, [
     ["systemctl", "--user", "daemon-reload"],
-    ["systemctl", "--user", "enable", "cliproxy-oauth.service"],
-    ["systemctl", "--user", "restart", "cliproxy-oauth.service"],
+    ["systemctl", "--user", "enable", "claudex.service"],
+    ["systemctl", "--user", "restart", "claudex.service"],
   ]);
 });
 
 test("failed initial setup can stop its package-owned service", async (t) => {
   const root = await temporaryRoot(t);
   const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
-  paths.systemdUnit = join(root, "cliproxy-oauth.service");
+  paths.systemdUnit = join(root, "claudex.service");
   const { writeFile } = await import("node:fs/promises");
   await writeFile(paths.systemdUnit, "[Unit]\n");
   const calls = [];
@@ -44,6 +44,6 @@ test("failed initial setup can stop its package-owned service", async (t) => {
     },
   });
 
-  assert.deepEqual(calls[0].args, ["--user", "stop", "cliproxy-oauth.service"]);
+  assert.deepEqual(calls[0].args, ["--user", "stop", "claudex.service"]);
   assert.equal(calls[0].options.allowFailure, true);
 });

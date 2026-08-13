@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const manifest = JSON.parse(await readFile(new URL("../channel/stable.json", import.meta.url), "utf8"));
 for (const [platform, asset] of Object.entries(manifest.proxy.assets)) {
-  const response = await fetch(asset.url, { headers: { "user-agent": "cliproxy-oauth-ci" } });
+  const response = await fetch(asset.url, { headers: { "user-agent": "claudex-ci" } });
   if (!response.ok) throw new Error(`${platform} returned HTTP ${response.status}`);
   const bytes = Buffer.from(await response.arrayBuffer());
   const sha256 = createHash("sha256").update(bytes).digest("hex");

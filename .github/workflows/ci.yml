@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
-      - run: node --check bin/cliproxy-oauth.js
+      - run: node --check bin/claudex.js
       - run: npm pack --dry-run
 
   stable-manifest:
@@ -43,6 +43,6 @@ jobs:
       - name: Install and inspect the pinned Windows binary
         shell: pwsh
         run: |
-          $env:CLIPROXY_OAUTH_HOME = Join-Path $env:RUNNER_TEMP "cliproxy-oauth-smoke"
-          node bin/cliproxy-oauth.js setup --no-service --port 19431
-          node bin/cliproxy-oauth.js doctor --json
+          $env:CLAUDEX_HOME = Join-Path $env:RUNNER_TEMP "claudex-smoke"
+          node bin/claudex.js setup --no-service --port 19431
+          node bin/claudex.js doctor --json

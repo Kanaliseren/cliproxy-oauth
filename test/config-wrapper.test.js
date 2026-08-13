@@ -18,6 +18,8 @@ test("setup config is loopback-only and preserves its generated key", async (t) 
 
   assert.equal(first.proxyKey, second.proxyKey);
   assert.equal(await readProxyKey(paths.proxyConfig), first.proxyKey);
+  const config = await readFile(paths.proxyConfig, "utf8");
+  assert.match(config, /alias: "claude-fable-5"/);
   assert.deepEqual(summary, {
     host: "127.0.0.1",
     port: 18418,

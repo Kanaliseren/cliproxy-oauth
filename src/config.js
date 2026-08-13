@@ -14,7 +14,9 @@ export async function writeProxyConfig(paths, manifest, { port = 8317 } = {}) {
 export function renderProxyConfig({ paths, manifest, port, proxyKey }) {
   const sol = manifest.models.sol;
   const terra = manifest.models.terra;
-  return `# Managed by cliproxy-oauth. Edit through the package, not in place.
+  const models = [sol, terra];
+  const aliases = models.flatMap(modelAliases);
+  return `# Managed by Claudex. Edit through the package, not in place.
 host: "127.0.0.1"
 port: ${Number(port)}
 
@@ -40,20 +42,19 @@ transient-error-cooldown-seconds: -1
 
 oauth-excluded-models:
   claude:
-    - ${yamlString(sol.alias)}
-    - ${yamlString(terra.alias)}
+${aliases.map((alias) => `    - ${yamlString(alias)}`).join("\n")}
 
 oauth-model-alias:
   codex:
-    - name: ${yamlString(sol.upstream)}
-      alias: ${yamlString(sol.alias)}
+${models.flatMap((model) => modelAliases(model).map((alias) => `    - name: ${yamlString(model.upstream)}
+      alias: ${yamlString(alias)}
       fork: true
-      display-name: ${yamlString(sol.displayName)}
-    - name: ${yamlString(terra.upstream)}
-      alias: ${yamlString(terra.alias)}
-      fork: true
-      display-name: ${yamlString(terra.displayName)}
+      display-name: ${yamlString(model.displayName)}`)).join("\n")}
 `;
+}
+
+function modelAliases(model) {
+  return [...new Set([model.alias, ...(model.aliases ?? [])])];
 }
 
 export async function readProxyKey(path) {

@@ -1,9 +1,12 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 
 export function resolvePaths({ env = process.env, platform = process.platform, home } = {}) {
   const userHome = home ?? env.HOME ?? homedir();
-  const isolated = env.CLIPROXY_OAUTH_HOME;
+  const isolated = env.CLAUDEX_HOME ?? env.CLIPROXY_OAUTH_HOME;
+  const legacy = !isolated && hasLegacyInstallation({ env, platform, userHome });
+  const namespace = legacy ? "cliproxy-oauth" : "claudex";
   let configDir;
   let dataDir;
   let stateDir;
@@ -15,21 +18,21 @@ export function resolvePaths({ env = process.env, platform = process.platform, h
     stateDir = join(isolated, "state");
     binDir = join(isolated, "bin");
   } else if (platform === "darwin") {
-    const applicationSupport = join(userHome, "Library", "Application Support", "cliproxy-oauth");
-    configDir = join(userHome, ".config", "cliproxy-oauth");
+    const applicationSupport = join(userHome, "Library", "Application Support", namespace);
+    configDir = join(userHome, ".config", namespace);
     dataDir = applicationSupport;
     stateDir = join(applicationSupport, "state");
     binDir = join(userHome, ".local", "bin");
   } else if (platform === "win32") {
     const local = env.LOCALAPPDATA ?? join(userHome, "AppData", "Local");
-    configDir = join(local, "cliproxy-oauth", "config");
-    dataDir = join(local, "cliproxy-oauth", "data");
-    stateDir = join(local, "cliproxy-oauth", "state");
-    binDir = join(local, "cliproxy-oauth", "bin");
+    configDir = join(local, namespace, "config");
+    dataDir = join(local, namespace, "data");
+    stateDir = join(local, namespace, "state");
+    binDir = join(local, namespace, "bin");
   } else {
-    configDir = join(env.XDG_CONFIG_HOME ?? join(userHome, ".config"), "cliproxy-oauth");
-    dataDir = join(env.XDG_DATA_HOME ?? join(userHome, ".local", "share"), "cliproxy-oauth");
-    stateDir = join(env.XDG_STATE_HOME ?? join(userHome, ".local", "state"), "cliproxy-oauth");
+    configDir = join(env.XDG_CONFIG_HOME ?? join(userHome, ".config"), namespace);
+    dataDir = join(env.XDG_DATA_HOME ?? join(userHome, ".local", "share"), namespace);
+    stateDir = join(env.XDG_STATE_HOME ?? join(userHome, ".local", "state"), namespace);
     binDir = join(userHome, ".local", "bin");
   }
 
@@ -51,9 +54,30 @@ export function resolvePaths({ env = process.env, platform = process.platform, h
     stateFile: join(stateDir, "state.json"),
     lockFile: join(stateDir, "operation.lock"),
     backupsDir: join(stateDir, "backups"),
-    systemdUnit: join(userHome, ".config", "systemd", "user", "cliproxy-oauth.service"),
-    launchdPlist: join(userHome, "Library", "LaunchAgents", "com.kanaliseren.cliproxy-oauth.plist"),
+    serviceName: `${namespace}.service`,
+    launchdLabel: `com.kanaliseren.${namespace}`,
+    systemdUnit: join(userHome, ".config", "systemd", "user", `${namespace}.service`),
+    launchdPlist: join(userHome, "Library", "LaunchAgents", `com.kanaliseren.${namespace}.plist`),
   };
+}
+
+function hasLegacyInstallation({ env, platform, userHome }) {
+  if (platform === "darwin") {
+    return [
+      join(userHome, "Library", "Application Support", "cliproxy-oauth"),
+      join(userHome, ".config", "cliproxy-oauth"),
+      join(userHome, "Library", "LaunchAgents", "com.kanaliseren.cliproxy-oauth.plist"),
+    ].some(existsSync);
+  }
+  if (platform === "win32") {
+    const local = env.LOCALAPPDATA ?? join(userHome, "AppData", "Local");
+    return existsSync(join(local, "cliproxy-oauth"));
+  }
+  return [
+    join(env.XDG_CONFIG_HOME ?? join(userHome, ".config"), "cliproxy-oauth"),
+    join(env.XDG_DATA_HOME ?? join(userHome, ".local", "share"), "cliproxy-oauth"),
+    join(userHome, ".config", "systemd", "user", "cliproxy-oauth.service"),
+  ].some(existsSync);
 }
 
 export function platformKey({ platform = process.platform, arch = process.arch } = {}) {

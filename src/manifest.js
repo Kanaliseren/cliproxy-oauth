@@ -19,6 +19,11 @@ export function validateManifest(manifest) {
     if (!manifest.models?.[model]?.upstream || !manifest.models?.[model]?.alias) {
       throw new Error(`channel manifest missing models.${model}`);
     }
+    if (manifest.models[model].aliases !== undefined) {
+      if (!Array.isArray(manifest.models[model].aliases) || manifest.models[model].aliases.some((alias) => typeof alias !== "string" || !alias)) {
+        throw new Error(`channel manifest has invalid models.${model}.aliases`);
+      }
+    }
   }
   return manifest;
 }

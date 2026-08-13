@@ -1,7 +1,7 @@
 # Security
 
 Do not include OAuth credentials, proxy keys, configuration files, or auth
-directories in bug reports. `cliproxy-oauth doctor --json` is designed to be
+directories in bug reports. `claudex doctor --json` is designed to be
 shareable and omits these values.
 
 Report a suspected credential leak privately to the repository owner. Revoke

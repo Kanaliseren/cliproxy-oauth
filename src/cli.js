@@ -32,7 +32,7 @@ export async function main(argv = process.argv.slice(2), io = console) {
     io.log(`Config: ${result.config}`);
     io.log(`Claude wrapper: ${result.wrapper}`);
     if (!result.service.installed) io.log("Service was not installed; start the proxy before live use.");
-    io.log("Next: cliproxy-oauth login");
+    io.log("Next: claudex login");
     return 0;
   }
 
@@ -64,7 +64,7 @@ export async function main(argv = process.argv.slice(2), io = console) {
     return 0;
   }
 
-  if (command === "upgrade") {
+  if (command === "update" || command === "upgrade") {
     rejectPositionals(parsed, command);
     const result = await upgrade(paths, manifest, { binary: parsed.options.binary });
     if (!result.changed) io.log(`Already on ${result.release.version} (${result.release.sha256.slice(0, 12)}).`);
@@ -84,7 +84,7 @@ export async function main(argv = process.argv.slice(2), io = console) {
 
   if (command === "integrate") {
     const [target, ...extra] = parsed.positionals;
-    if (!target || extra.length > 0) throw new Error("usage: cliproxy-oauth integrate <paseo|t3|all> [--path PATH]");
+    if (!target || extra.length > 0) throw new Error("usage: claudex integrate <paseo|t3|all> [--path PATH]");
     const results = await integrate(paths, manifest, target, { path: parsed.options.path });
     for (const result of results) io.log(`Updated ${result.target}: ${result.path} (backup: ${result.backup})`);
     io.log("No application was restarted; restart it when convenient.");
@@ -94,20 +94,22 @@ export async function main(argv = process.argv.slice(2), io = console) {
   throw new Error(`unknown command: ${command}\n\n${helpText}`);
 }
 
-const helpText = `cliproxy-oauth — local OAuth lifecycle manager
+const helpText = `claudex — run Claude Code through your local Codex OAuth session
 
 Usage:
-  cliproxy-oauth setup [--binary PATH] [--port PORT] [--no-service]
-  cliproxy-oauth login [--device]
-  cliproxy-oauth doctor [--json] [--live]
-  cliproxy-oauth upgrade [--binary PATH]
-  cliproxy-oauth rollback
-  cliproxy-oauth integrate <paseo|t3|all> [--path PATH]
-  cliproxy-oauth claude [--] [CLAUDE OPTIONS...]
-  cliproxy-oauth status [--json]
+  claudex setup [--binary PATH] [--port PORT] [--no-service]
+  claudex login [--device]
+  claudex doctor [--json] [--live]
+  claudex update [--binary PATH]
+  claudex upgrade [--binary PATH]
+  claudex rollback
+  claudex integrate <paseo|t3|all> [--path PATH]
+  claudex claude [--] [CLAUDE OPTIONS...]
+  claudex status [--json]
 
 Environment:
-  CLIPROXY_OAUTH_HOME  Isolate every package-owned file under one directory.
+  CLAUDEX_HOME         Isolate every package-owned file under one directory.
+  CLIPROXY_OAUTH_HOME  Legacy alias for CLAUDEX_HOME.
   CLAUDE_CODE_BINARY   Override the Claude Code executable.
 `;
 

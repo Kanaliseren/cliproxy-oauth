@@ -19,7 +19,7 @@ if (process.env.GITHUB_OUTPUT !== undefined) {
 }
 
 async function json(url) {
-  const response = await fetch(url, { headers: { "user-agent": "cliproxy-oauth-upstream-watch" } });
+  const response = await fetch(url, { headers: { "user-agent": "claudex-upstream-watch" } });
   if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
   return response.json();
 }

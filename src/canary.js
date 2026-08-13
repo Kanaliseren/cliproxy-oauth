@@ -7,7 +7,7 @@ import { renderProxyConfig } from "./config.js";
 import { atomicWrite, ensureDir, randomSecret, sleep } from "./util.js";
 
 export async function runIsolatedCanary(binary, paths, manifest, { fetchImpl = fetch } = {}) {
-  const root = await mkdtemp(join(tmpdir(), "cliproxy-oauth-canary-"));
+  const root = await mkdtemp(join(tmpdir(), "claudex-canary-"));
   const authDir = join(root, "auth");
   const configPath = join(root, "config.yaml");
   await ensureDir(authDir);

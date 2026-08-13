@@ -27,7 +27,7 @@ lines.on("line", async (line) => {
     reply(message.id, {
       protocolVersion: message.params?.protocolVersion ?? "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "cliproxy-oauth-canary", version: "1.0.0" },
+      serverInfo: { name: "claudex-canary", version: "1.0.0" },
     });
   } else if (message.method === "tools/list") {
     reply(message.id, { tools });
