@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { readProxyKey, readProxySummary, renderProxyConfig, writeProxyConfig } from "../src/config.js";
 import { resolvePaths } from "../src/paths.js";
 import { atomicWrite } from "../src/util.js";
@@ -8,6 +9,17 @@ import { runClaude, writeClaudeWrapper } from "../src/wrapper.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
 
 const manifest = fixtureManifest();
+
+test("stable channel routes Sonnet and Haiku through Codex while Opus and Fable stay native", async () => {
+  const stable = JSON.parse(
+    await readFile(fileURLToPath(new URL("../channel/stable.json", import.meta.url)), "utf8"),
+  );
+
+  assert.deepEqual(stable.models.sol.aliases, ["claude-sonnet-5"]);
+  assert.equal(stable.models.terra.alias, "claude-haiku-4-5");
+  assert.equal(stable.models.opus.upstream, "claude-opus-5");
+  assert.equal(stable.models.fable.upstream, "claude-fable-5");
+});
 
 test("setup config is loopback-only and preserves its generated key", async (t) => {
   const root = await temporaryRoot(t);
@@ -19,7 +31,10 @@ test("setup config is loopback-only and preserves its generated key", async (t) 
   assert.equal(first.proxyKey, second.proxyKey);
   assert.equal(await readProxyKey(paths.proxyConfig), first.proxyKey);
   const config = await readFile(paths.proxyConfig, "utf8");
-  assert.match(config, /alias: "claude-fable-5"/);
+  assert.match(config, /name: "gpt-5\.6-sol"\n      alias: "claude-sonnet-5"/);
+  assert.match(config, /name: "gpt-5\.6-terra"\n      alias: "claude-haiku-4-5"/);
+  assert.doesNotMatch(config, /alias: "claude-opus-5"/);
+  assert.doesNotMatch(config, /alias: "claude-fable-5"/);
   assert.deepEqual(summary, {
     host: "127.0.0.1",
     port: 18418,

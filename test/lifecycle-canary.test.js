@@ -4,7 +4,7 @@ import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { runIsolatedCanary } from "../src/canary.js";
 import { readProxyKey } from "../src/config.js";
-import { rollback, setup, updateClaudeCode, upgrade } from "../src/lifecycle.js";
+import { login, rollback, setup, updateClaudeCode, upgrade } from "../src/lifecycle.js";
 import { resolvePaths } from "../src/paths.js";
 import { loadState } from "../src/state.js";
 import { fixtureManifest, temporaryRoot } from "../test-support/helpers.js";
@@ -131,6 +131,33 @@ test("update refreshes Claude Code through its native latest channel", async () 
 
   assert.equal(result.version, "99.1.2");
   assert.deepEqual(calls, [["claude", "update"], ["claude", "--version"]]);
+});
+
+test("login selects Codex or native Claude OAuth explicitly", async (t) => {
+  const root = await temporaryRoot(t);
+  const paths = resolvePaths({ env: { CLIPROXY_OAUTH_HOME: root }, home: root, platform: "linux" });
+  await mkdir(paths.authDir, { recursive: true });
+  await mkdir(paths.currentDir, { recursive: true });
+  await mkdir(paths.configDir, { recursive: true });
+  await writeFile(paths.currentBinary, "proxy", { mode: 0o755 });
+  await writeFile(paths.proxyConfig, "host: 127.0.0.1\n", { mode: 0o600 });
+  const calls = [];
+  const runCommand = async (binary, args) => {
+    calls.push([binary, ...args]);
+    return { code: 0, stdout: "", stderr: "" };
+  };
+
+  await login(paths, { provider: "codex", device: true, runCommand });
+  await login(paths, { provider: "claude", runCommand });
+
+  assert.deepEqual(calls, [
+    [paths.currentBinary, "-config", paths.proxyConfig, "-codex-device-login"],
+    [paths.currentBinary, "-config", paths.proxyConfig, "-claude-login"],
+  ]);
+  await assert.rejects(
+    login(paths, { provider: "claude", device: true, runCommand }),
+    /device login is only supported for Codex/,
+  );
 });
 
 async function writeExecutable(path, contents) {

@@ -52,8 +52,8 @@ export async function diagnose(paths, manifest, { live = false, fetchImpl = fetc
   const credentials = await credentialSummary(paths.authDir);
   add(
     "oauth",
-    credentials.count > 0 ? "pass" : "warn",
-    credentials.count > 0 ? `${credentials.count} local Codex credential file(s)` : "not logged in on this machine",
+    credentials.codex > 0 && credentials.claude > 0 ? "pass" : "warn",
+    `local credentials: Codex ${credentials.codex}, Claude ${credentials.claude}`,
   );
   for (const insecure of credentials.insecure) add("oauth permissions", "fail", insecure);
 
@@ -75,7 +75,8 @@ export async function diagnose(paths, manifest, { live = false, fetchImpl = fetc
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const body = await response.json();
       const names = new Set((body?.data ?? []).map((model) => model.id));
-      const missing = [manifest.models.sol.alias, manifest.models.terra.alias].filter((model) => !names.has(model));
+      const expected = ["sol", "terra", "opus", "fable"].map((model) => manifest.models[model].alias);
+      const missing = expected.filter((model) => !names.has(model));
       if (missing.length > 0) throw new Error(`missing model aliases: ${missing.join(", ")}`);
       add("live proxy", "pass", `${body.data.length} models; OAuth aliases present`);
     } catch (error) {
@@ -107,25 +108,25 @@ export async function statusSummary(paths, { runCommand = run } = {}) {
 }
 
 async function credentialSummary(authDir) {
-  if (!(await exists(authDir))) return { count: 0, insecure: [] };
+  if (!(await exists(authDir))) return { codex: 0, claude: 0, insecure: [] };
   const insecure = [];
-  let count = 0;
+  const providers = { codex: 0, claude: 0 };
   for (const entry of await readdir(authDir, { withFileTypes: true })) {
     if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
     const path = `${authDir}/${entry.name}`;
     try {
       const credential = JSON.parse(await readFile(path, "utf8"));
-      if (credential.type !== "codex") continue;
+      if (!(credential.type in providers)) continue;
+      providers[credential.type] += 1;
     } catch {
       continue;
     }
-    count += 1;
     if (process.platform !== "win32") {
       const metadata = await stat(path);
       if ((metadata.mode & 0o077) !== 0) insecure.push(`${entry.name} is readable outside the user account`);
     }
   }
-  return { count, insecure };
+  return { ...providers, insecure };
 }
 
 async function checkMode(path, expected, name, add) {

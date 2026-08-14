@@ -32,14 +32,17 @@ export async function main(argv = process.argv.slice(2), io = console) {
     io.log(`Config: ${result.config}`);
     io.log(`Claude wrapper: ${result.wrapper}`);
     if (!result.service.installed) io.log("Service was not installed; start the proxy before live use.");
-    io.log("Next: claudex login");
+    io.log("Next: claudex login codex && claudex login claude");
     return 0;
   }
 
   if (command === "login") {
-    rejectPositionals(parsed, command);
-    await login(paths, { device: Boolean(parsed.options.device) });
-    io.log("Codex OAuth login completed locally.");
+    const [provider = "codex", ...extra] = parsed.positionals;
+    if (extra.length > 0 || !new Set(["codex", "claude"]).has(provider)) {
+      throw new Error("usage: claudex login [codex|claude] [--device]");
+    }
+    await login(paths, { provider, device: Boolean(parsed.options.device) });
+    io.log(`${provider === "claude" ? "Claude" : "Codex"} OAuth login completed locally.`);
     return 0;
   }
 
@@ -96,11 +99,11 @@ export async function main(argv = process.argv.slice(2), io = console) {
   throw new Error(`unknown command: ${command}\n\n${helpText}`);
 }
 
-const helpText = `claudex — run Claude Code through your local Codex OAuth session
+const helpText = `claudex — route Claude Code through local Codex and Claude OAuth sessions
 
 Usage:
   claudex setup [--binary PATH] [--port PORT] [--no-service]
-  claudex login [--device]
+  claudex login [codex|claude] [--device]
   claudex doctor [--json] [--live]
   claudex update [--binary PATH]
   claudex upgrade [--binary PATH]

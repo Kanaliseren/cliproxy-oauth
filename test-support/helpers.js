@@ -16,10 +16,12 @@ export function fixtureManifest() {
       sol: {
         upstream: "gpt-5.6-sol",
         alias: "claude-sonnet-5",
-        aliases: ["claude-sonnet-5", "claude-fable-5"],
+        aliases: ["claude-sonnet-5"],
         displayName: "Sol",
       },
       terra: { upstream: "gpt-5.6-terra", alias: "claude-haiku-4-5", displayName: "Terra" },
+      opus: { upstream: "claude-opus-5", alias: "claude-opus-5", displayName: "Opus" },
+      fable: { upstream: "claude-fable-5", alias: "claude-fable-5", displayName: "Fable" },
     },
     compatibility: {
       claudeCode: {

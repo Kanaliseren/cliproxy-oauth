@@ -48,13 +48,23 @@
     "sol": {
       "upstream": "gpt-5.6-sol",
       "alias": "claude-sonnet-5",
-      "aliases": ["claude-sonnet-5", "claude-fable-5", "claude-opus-5"],
+      "aliases": ["claude-sonnet-5"],
       "displayName": "Sonnet 5 (GPT-5.6 Sol)"
     },
     "terra": {
       "upstream": "gpt-5.6-terra",
       "alias": "claude-haiku-4-5",
       "displayName": "Haiku 4.5 (GPT-5.6 Terra)"
+    },
+    "opus": {
+      "upstream": "claude-opus-5",
+      "alias": "claude-opus-5",
+      "displayName": "Claude Opus 5"
+    },
+    "fable": {
+      "upstream": "claude-fable-5",
+      "alias": "claude-fable-5",
+      "displayName": "Claude Fable 5"
     }
   },
   "compatibility": {
@@ -64,7 +74,7 @@
       "optionalCapabilities": ["--exclude-dynamic-system-prompt-sections"]
     },
     "cliProxyAPI": {
-      "requiredCapabilities": ["-codex-login", "-codex-device-login", "-config"]
+      "requiredCapabilities": ["-codex-login", "-codex-device-login", "-claude-login", "-config"]
     },
     "paseo": {
       "testedConfigSchema": 1

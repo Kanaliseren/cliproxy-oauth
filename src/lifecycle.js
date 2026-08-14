@@ -119,18 +119,25 @@ export async function updateClaudeCode({
   return { version };
 }
 
-export async function login(paths, { device = false, runCommand = run } = {}) {
+export async function login(paths, { provider = "codex", device = false, runCommand = run } = {}) {
   if (!(await exists(paths.currentBinary)) || !(await exists(paths.proxyConfig))) {
     throw new Error("run setup before login");
   }
+  if (!new Set(["codex", "claude"]).has(provider)) {
+    throw new Error("login provider must be codex or claude");
+  }
+  if (provider === "claude" && device) {
+    throw new Error("device login is only supported for Codex");
+  }
   await ensureDir(paths.authDir);
-  const flag = device ? "-codex-device-login" : "-codex-login";
+  const flag = provider === "claude" ? "-claude-login" : device ? "-codex-device-login" : "-codex-login";
   const result = await runCommand(paths.currentBinary, ["-config", paths.proxyConfig, flag], {
     stdio: "inherit",
     timeout: 10 * 60_000,
     allowFailure: true,
   });
-  if (result.code !== 0) throw new Error(`Codex OAuth login failed with exit ${result.code}`);
+  const displayName = provider === "claude" ? "Claude" : "Codex";
+  if (result.code !== 0) throw new Error(`${displayName} OAuth login failed with exit ${result.code}`);
   return true;
 }
 

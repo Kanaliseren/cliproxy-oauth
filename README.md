@@ -1,7 +1,9 @@
 # Claudex
 
-Run Claude Code through your local ChatGPT/Codex OAuth session. Claudex safely
-installs and manages the CLIProxyAPI bridge used by Claude Code, Paseo, and T3 Code.
+Run Claude Code through local Codex and Claude OAuth sessions. Claudex safely installs
+and manages the CLIProxyAPI bridge used by Claude Code, Paseo, and T3 Code. Sonnet
+routes to GPT-5.6 Sol, Haiku routes to GPT-5.6 Terra, and Opus and Fable remain native
+Claude models with their native context windows.
 
 OAuth credentials are created locally on every machine. They are never bundled,
 uploaded, copied between users, or printed by this package.
@@ -12,7 +14,8 @@ Until the first npm registry release, run directly from GitHub:
 
 ```bash
 npx --yes github:Kanaliseren/claudex setup
-npx --yes github:Kanaliseren/claudex login
+npx --yes github:Kanaliseren/claudex login codex
+npx --yes github:Kanaliseren/claudex login claude
 npx --yes github:Kanaliseren/claudex doctor --live
 ```
 
@@ -32,14 +35,15 @@ claudex integrate all
 generates a loopback-only configuration, installs a user service where the
 platform supports one, and creates `~/.local/bin/claude-cliproxy`.
 
-Run `setup` and `login` separately on every machine and for every user. Do not
-copy the generated OAuth files between machines.
+Run `setup` and both provider logins separately on every machine and for every user.
+`claudex login` remains a compatibility alias for `claudex login codex`. Do not copy
+the generated OAuth files between machines.
 
 ## Commands
 
 ```text
 claudex setup [--binary PATH] [--port PORT] [--no-service]
-claudex login [--device]
+claudex login [codex|claude] [--device]
 claudex doctor [--json] [--live]
 claudex update [--binary PATH]
 claudex upgrade [--binary PATH]
